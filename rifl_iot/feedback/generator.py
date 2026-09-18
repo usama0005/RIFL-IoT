@@ -72,7 +72,13 @@ class FeedbackGenerator:
                 if ctype == "stuck" and self._last_y is None:
                     ctype = "replace"
             elif self.noise_model == "symmetric_flip":
-                ctype = "flip"
+                # Zero-information control: BOTH channels replaced with independent draws
+                # unrelated to ground truth. Neither v_range nor v_agree has real signal to
+                # detect here -- distinct from "correlated", where both channels are wrong
+                # but still consistent with each other (undetectable by redundancy specifically).
+                ctype = "symmetric_flip"
+                y = float(tr["u_replace"][t])
+                b = int(tr["spike_sign"][t])
             elif self.noise_model == "correlated":
                 ctype = "correlated_flip"
                 b = 1 - b

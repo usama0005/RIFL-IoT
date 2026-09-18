@@ -1,0 +1,21 @@
+base: env_default.yaml
+experiment_id: phase9b_symflip100
+data:
+  source: uci_hydraulic
+  root: data/uci_hydraulic
+  calib_frac: 0.5
+  split_seed: 12345
+  stable_only: false
+llm:
+  backend: openai_compat
+  base_url: http://localhost:8000/v1
+  model: Qwen/Qwen2.5-7B-Instruct-AWQ
+  api_key_env: null
+  cache_path: runs/phase3_b2_uci/llm_cache.sqlite
+  gen: {temperature: 0.0, max_tokens: 256, seed: 0}
+methods: [B2_naive, B5_blind_mask, B4_rifl_iot]
+conditions:
+  ctrl_symflip100: {feedback.noise.model: symmetric_flip, feedback.noise.eta: 1.0}
+seeds: [0, 1, 2, 3, 4]
+output_root: runs
+results_root: results

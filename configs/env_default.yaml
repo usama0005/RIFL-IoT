@@ -53,14 +53,34 @@ metrics:
   adapt_threshold: 0.8
 
 
-# Learning Automaton (B2 uses variant=LR_I, rho=w=1 fixed; B4 reuses this section + reliability/temporal-credit).
+# Learning Automaton (B2 uses rho=w=1 fixed; B4 reuses this section + reliability/temporal-credit).
 # alpha is a placeholder; DESIGN.md §8 tunes it on validation seeds 100-102 (clean + drift only)
 # before Phase 5 -- do not tune against noise/delay/missing results.
+# variant=Pursuit frozen by the Phase-5 comparison (results/phase5_la_variant_selection): strongest
+# mean reward/regret/final-performance/adaptation-speed across 3 validation seeds x {clean,drift}.
+# This is a protocol decision, not a claim of universal superiority (3 seeds, 2 conditions only).
 la:
-  variant: LR_I        # LR_I | LR_P | LR_epsilonP | Pursuit -- default frozen by Phase-5 comparison, not before
-  alpha: 0.2
+  variant: Pursuit
+  alpha: 0.04           # frozen by results/phase5b_alpha_grid: best mean reward + lowest regret
+                         # in BOTH clean and drift, ~10x lower cross-seed variance than alpha=0.2
   omega: 0.5            # init blending toward LLM's top-ranked action on first visit to a context
   p_min: 0.01
   # epsilon (LR_P/LR_epsilonP) and pursuit_eta (Pursuit) are intentionally NOT set here --
   # each variant uses its own correct default (LR_P eps=1.0, LR_epsilonP eps=0.05, Pursuit eta=0.1)
   # from learning/automaton.py VARIANT_DEFAULTS unless explicitly overridden per-condition.
+
+# B4 only. rho = v_range * v_stuck * v_agree (DESIGN.md §5); tau matches feedback.tau_fail above.
+reliability:
+  tau: 0.5
+  kappa: 0.2
+
+# B4 only. w(Delta) = exp(-lambda*Delta), lambda = ln2/half_life (DESIGN.md §6).
+temporal_credit:
+  half_life: 10.0
+
+# B5 only. rho_random in {rho_low, rho_high} w.p. {p_low, 1-p_low}, blind to feedback content --
+# isolates whether B4's advantage is content-dependent detection vs incidental step-size averaging.
+blind_mask:
+  rho_low: 0.2
+  rho_high: 1.0
+  p_low: 0.5

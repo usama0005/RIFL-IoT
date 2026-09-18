@@ -1,0 +1,30 @@
+base: env_default.yaml
+experiment_id: phase5b_alpha_grid
+data:
+  source: uci_hydraulic
+  root: data/uci_hydraulic
+  calib_frac: 0.5
+  split_seed: 12345
+  stable_only: false
+llm:
+  backend: openai_compat
+  base_url: http://localhost:8000/v1
+  model: Qwen/Qwen2.5-7B-Instruct-AWQ
+  api_key_env: null
+  cache_path: runs/phase5_la_variant_selection/llm_cache.sqlite
+  gen: {temperature: 0.0, max_tokens: 256, seed: 0}
+methods: [B2_naive]
+conditions:
+  a002_clean:  {la.alpha: 0.02}
+  a002_drift:   {la.alpha: 0.02, run.schedule: drift}
+  a004_clean:    {la.alpha: 0.04}
+  a004_drift:     {la.alpha: 0.04, run.schedule: drift}
+  a010_clean:       {la.alpha: 0.10}
+  a010_drift:        {la.alpha: 0.10, run.schedule: drift}
+  a020_clean:           {la.alpha: 0.20}
+  a020_drift:            {la.alpha: 0.20, run.schedule: drift}
+  a040_clean:                {la.alpha: 0.40}
+  a040_drift:                 {la.alpha: 0.40, run.schedule: drift}
+seeds: [100, 101, 102]
+output_root: runs
+results_root: results

@@ -6,8 +6,10 @@ import time
 import numpy as np
 import yaml
 
+from rifl_iot.agents.blind_mask import BlindMaskAgent
 from rifl_iot.agents.history import HistoryLLMAgent
 from rifl_iot.agents.naive_feedback import NaiveFeedbackAgent
+from rifl_iot.agents.rifl_iot_agent import ReliableFeedbackAgent
 from rifl_iot.agents.vanilla import VanillaLLMAgent
 from rifl_iot.environment.calibration import compute_calibration_summary
 from rifl_iot.environment.dataset import load_data
@@ -34,6 +36,12 @@ def build_agent(method, cfg, llm, system_prompt, seed):
         return NaiveFeedbackAgent(llm, cfg["llm"]["gen"], system_prompt, seed, cfg["la"])
     if method == "B1_history":
         return HistoryLLMAgent(llm, cfg["llm"]["gen"], system_prompt, H=cfg.get("b1", {}).get("H", 20))
+    if method == "B4_rifl_iot":
+        return ReliableFeedbackAgent(llm, cfg["llm"]["gen"], system_prompt, seed, cfg["la"],
+                                     cfg.get("reliability"), cfg.get("temporal_credit"))
+    if method == "B5_blind_mask":
+        return BlindMaskAgent(llm, cfg["llm"]["gen"], system_prompt, seed, cfg["la"],
+                              cfg.get("blind_mask"), cfg.get("temporal_credit"))
     raise NotImplementedError(f"{method} is scheduled for a later phase")
 
 
