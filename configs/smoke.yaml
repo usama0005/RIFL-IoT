@@ -1,0 +1,34 @@
+# SMOKE TEST ONLY: synthetic sensor data + rule-based stub LLM. Never report these numbers.
+base: env_default.yaml
+experiment_id: smoke
+smoke_only: true
+data:
+  source: synthetic_smoke
+  root: null
+  calib_frac: 0.5
+  split_seed: 12345
+  stable_only: false
+env:
+  schedules:
+    stationary: [[P1, 150]]
+    drift: [[P1, 60], [P2, 60], [P3, 60], [P1, 60]]
+metrics:
+  window: 30
+  adapt_window_visits: 10
+llm:
+  backend: stub
+  model: stub-v0
+  cache_path: runs/smoke/llm_cache.sqlite
+  gen: {temperature: 0.0, max_tokens: 256}
+  stub: {ce_healthy_min: 38.0, ce_critical_max: 25.0}
+methods: [B0_vanilla]
+conditions:
+  clean: {}
+  noise30: {feedback.noise.eta: 0.3}
+  delay5: {feedback.delay: 5}
+  missing30: {feedback.missing.rate: 0.3}
+  conflict30: {feedback.conflict_q: 0.3}
+  drift: {run.schedule: drift}
+seeds: [0, 1]
+output_root: runs
+results_root: results

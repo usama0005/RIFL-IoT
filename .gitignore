@@ -1,0 +1,16 @@
+# data and outputs (regenerable, large)
+data/
+runs/
+results/
+
+# python
+__pycache__/
+*.pyc
+*.sqlite
+iot_env/
+venv/
+.venv/
+
+# misc
+.DS_Store
+*.log

@@ -1,0 +1,28 @@
+base: env_default.yaml
+experiment_id: phase5_la_variant_selection
+data:
+  source: uci_hydraulic
+  root: data/uci_hydraulic
+  calib_frac: 0.5
+  split_seed: 12345
+  stable_only: false
+llm:
+  backend: openai_compat
+  base_url: http://localhost:8000/v1
+  model: Qwen/Qwen2.5-7B-Instruct-AWQ
+  api_key_env: null
+  cache_path: runs/phase5_la_variant_selection/llm_cache.sqlite
+  gen: {temperature: 0.0, max_tokens: 256, seed: 0}
+methods: [B2_naive]
+conditions:
+  LR_I_clean:        {la.variant: LR_I}
+  LR_I_drift:         {la.variant: LR_I, run.schedule: drift}
+  LR_P_clean:          {la.variant: LR_P}
+  LR_P_drift:           {la.variant: LR_P, run.schedule: drift}
+  LR_epsilonP_clean:     {la.variant: LR_epsilonP}
+  LR_epsilonP_drift:      {la.variant: LR_epsilonP, run.schedule: drift}
+  Pursuit_clean:            {la.variant: Pursuit}
+  Pursuit_drift:             {la.variant: Pursuit, run.schedule: drift}
+seeds: [100, 101, 102]
+output_root: runs
+results_root: results

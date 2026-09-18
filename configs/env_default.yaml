@@ -1,0 +1,66 @@
+# Shared environment definition. All constructed parameters live here (see DESIGN.md §0, §3).
+env:
+  actions: [A0_CONTINUE, A1_DERATE, A2_SCHEDULE_MAINTENANCE, A3_SHUTDOWN_REPAIR]
+  contexts: [healthy, degraded, critical]
+  phases:
+    P1:
+      description: baseline operations
+      context_mix: [0.4, 0.4, 0.2]
+      downtime_cost: [0.00, 0.10, 0.20, 0.50]
+      fail_cost: 1.0
+      p_fail:
+        healthy:  [0.01, 0.01, 0.00, 0.00]
+        degraded: [0.60, 0.30, 0.05, 0.00]
+        critical: [0.95, 0.80, 0.50, 0.00]
+    P2:
+      description: spare-parts shortage (maintenance/repair downtime increases)
+      context_mix: [0.4, 0.4, 0.2]
+      downtime_cost: [0.00, 0.10, 0.60, 0.70]
+      fail_cost: 1.0
+      p_fail:
+        healthy:  [0.01, 0.01, 0.00, 0.00]
+        degraded: [0.60, 0.30, 0.05, 0.00]
+        critical: [0.95, 0.80, 0.50, 0.00]
+    P3:
+      description: cooler retrofit + high demand (degraded units rarely fail; derating costs more)
+      context_mix: [0.4, 0.4, 0.2]
+      downtime_cost: [0.00, 0.25, 0.30, 0.50]
+      fail_cost: 1.0
+      p_fail:
+        healthy:  [0.01, 0.01, 0.00, 0.00]
+        degraded: [0.05, 0.03, 0.02, 0.00]
+        critical: [0.95, 0.80, 0.50, 0.00]
+  schedules:
+    stationary: [[P1, 1000]]
+    drift: [[P1, 500], [P2, 500], [P3, 500], [P1, 500]]
+
+feedback:
+  sigma_A: 0.03
+  e_B: 0.02
+  tau_fail: 0.5
+  tagged: true
+  noise: {model: mixed, eta: 0.0}     # mixed | symmetric_flip | correlated
+  conflict_q: 0.0
+  missing: {model: mcar, rate: 0.0}
+  delay: 0
+
+run:
+  schedule: stationary
+
+metrics:
+  window: 100
+  adapt_window_visits: 30
+  adapt_threshold: 0.8
+
+
+# Learning Automaton (B2 uses variant=LR_I, rho=w=1 fixed; B4 reuses this section + reliability/temporal-credit).
+# alpha is a placeholder; DESIGN.md §8 tunes it on validation seeds 100-102 (clean + drift only)
+# before Phase 5 -- do not tune against noise/delay/missing results.
+la:
+  variant: LR_I        # LR_I | LR_P | LR_epsilonP | Pursuit -- default frozen by Phase-5 comparison, not before
+  alpha: 0.2
+  omega: 0.5            # init blending toward LLM's top-ranked action on first visit to a context
+  p_min: 0.01
+  # epsilon (LR_P/LR_epsilonP) and pursuit_eta (Pursuit) are intentionally NOT set here --
+  # each variant uses its own correct default (LR_P eps=1.0, LR_epsilonP eps=0.05, Pursuit eta=0.1)
+  # from learning/automaton.py VARIANT_DEFAULTS unless explicitly overridden per-condition.
