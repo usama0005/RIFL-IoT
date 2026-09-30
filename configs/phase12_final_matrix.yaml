@@ -1,0 +1,26 @@
+base: env_default.yaml
+experiment_id: phase12_final_matrix
+data:
+  source: uci_hydraulic
+  root: data/uci_hydraulic
+  calib_frac: 0.5
+  split_seed: 12345
+  stable_only: false
+llm:
+  backend: openai_compat
+  base_url: http://localhost:8000/v1
+  model: Qwen/Qwen2.5-7B-Instruct-AWQ
+  api_key_env: null
+  cache_path: runs/phase3_b2_uci/llm_cache.sqlite
+  gen: {temperature: 0.0, max_tokens: 256, seed: 0}
+methods: [B2_naive, B5_blind_mask, B4_rifl_iot]
+conditions:
+  missing10:          {feedback.missing.rate: 0.1}
+  missing30:              {feedback.missing.rate: 0.3}
+  missing50:                  {feedback.missing.rate: 0.5}
+  conflict30:                      {feedback.conflict_q: 0.3}
+  drift_noise30:                        {feedback.noise.eta: 0.3, run.schedule: drift}
+  drift_delay10:                              {feedback.delay: 10, run.schedule: drift}
+seeds: [0, 1, 2, 3, 4]
+output_root: runs
+results_root: results
