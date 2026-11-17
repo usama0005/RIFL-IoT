@@ -1,0 +1,28 @@
+# Decision 4: tuned-constant-attenuation baseline. B2 (no content-awareness, no temporal
+# credit) at a FIXED alpha matching RIFL-IoT's own empirical mean effective alpha_t at
+# noise50 (0.02367, computed from existing logs). Tests whether B4's advantage survives
+# against a fairly-tuned constant attenuation, not just the untuned 50/50 coin-flip B5.
+base: env_default.yaml
+experiment_id: review_tuned_constant
+data:
+  source: uci_hydraulic
+  root: data/uci_hydraulic
+  calib_frac: 0.5
+  split_seed: 12345
+  stable_only: false
+llm:
+  backend: openai_compat
+  base_url: http://localhost:8000/v1
+  model: Qwen/Qwen2.5-7B-Instruct-AWQ
+  api_key_env: null
+  cache_path: runs/phase3_b2_uci/llm_cache.sqlite
+  gen: {temperature: 0.0, max_tokens: 256, seed: 0}
+methods: [B2_naive]
+conditions:
+  tuned_clean:       {la.alpha: 0.02367}
+  tuned_noise30:        {la.alpha: 0.02367, feedback.noise.eta: 0.3}
+  tuned_noise50:           {la.alpha: 0.02367, feedback.noise.eta: 0.5}
+  tuned_correlated30:         {la.alpha: 0.02367, feedback.noise.model: correlated, feedback.noise.eta: 0.3}
+seeds: [0, 1, 2, 3, 4]
+output_root: runs
+results_root: results

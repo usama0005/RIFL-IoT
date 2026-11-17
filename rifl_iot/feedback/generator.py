@@ -82,6 +82,20 @@ class FeedbackGenerator:
             elif self.noise_model == "correlated":
                 ctype = "correlated_flip"
                 b = 1 - b
+            elif self.noise_model == "independent_both":
+                # Missing middle case (review ask): both channels corrupted, but
+                # INDEPENDENTLY of each other (unlike "correlated", which keeps them
+                # consistent). Each channel's own corruption draw is independent.
+                ctype = "independent_both"
+            elif self.noise_model == "mixed_hard":
+                # Harder suite for the circularity test (review decision 3): none of these are
+                # matched to the detector's exact thresholds. (i) in-range shift -- wrong but
+                # stays inside the valid range, so v_range cannot catch it by construction;
+                # (ii) jitter-stuck -- near-repeat with small noise, so exact-equality liveness
+                # cannot catch it; (iii) channel-B independent -- B is wrong on its own while A
+                # stays clean, testing whether agreement produces false positives on genuinely
+                # good A events; (iv) replace, reused from the standard suite for continuity.
+                ctype = ["inrange_shift", "jitter_stuck", "channelB_indep", "replace"][int(tr["corrupt_type"][t])]
             else:
                 raise ValueError(self.noise_model)
             if ctype in ("flip", "correlated_flip"):
@@ -93,6 +107,20 @@ class FeedbackGenerator:
                 y = self._last_y
             elif ctype == "replace":
                 y = float(tr["u_replace"][t])
+            elif ctype == "inrange_shift":
+                true_score = self._score(t, a, fail)
+                shift = 0.4 if tr["spike_sign"][t] else -0.4
+                y = float(max(-0.2, min(1.2, true_score + shift)))
+            elif ctype == "jitter_stuck":
+                base = self._last_y if self._last_y is not None else y
+                y = float(base + 0.01 * (2 * tr["u_spike"][t] - 1))
+            elif ctype == "channelB_indep":
+                b = 1 - b
+            elif ctype == "independent_both":
+                if tr["u_spike"][t] < 0.5:
+                    y = float(tr["u_replace"][t])
+                if tr["spike_sign"][t]:
+                    b = 1 - b
 
         if tr["u_conflict"][t] < self.q:
             conflict = True

@@ -33,15 +33,22 @@ def build_agent(method, cfg, llm, system_prompt, seed):
     if method == "B0_vanilla":
         return VanillaLLMAgent(llm, cfg["llm"]["gen"], system_prompt)
     if method == "B2_naive":
-        return NaiveFeedbackAgent(llm, cfg["llm"]["gen"], system_prompt, seed, cfg["la"])
+        return NaiveFeedbackAgent(llm, cfg["llm"]["gen"], system_prompt, seed, cfg["la"],
+                                  cfg.get("misattribution"))
     if method == "B1_history":
         return HistoryLLMAgent(llm, cfg["llm"]["gen"], system_prompt, H=cfg.get("b1", {}).get("H", 20))
     if method == "B4_rifl_iot":
         return ReliableFeedbackAgent(llm, cfg["llm"]["gen"], system_prompt, seed, cfg["la"],
-                                     cfg.get("reliability"), cfg.get("temporal_credit"))
+                                     cfg.get("reliability"), cfg.get("temporal_credit"),
+                                     cfg.get("misattribution"))
     if method == "B5_blind_mask":
         return BlindMaskAgent(llm, cfg["llm"]["gen"], system_prompt, seed, cfg["la"],
-                              cfg.get("blind_mask"), cfg.get("temporal_credit"))
+                              cfg.get("blind_mask"), cfg.get("temporal_credit"),
+                              cfg.get("misattribution"))
+    if method == "B6_robust_median":
+        from rifl_iot.agents.robust_median import RobustMedianAgent
+        return RobustMedianAgent(llm, cfg["llm"]["gen"], system_prompt, seed, cfg["la"],
+                                 cfg.get("robust"), cfg.get("misattribution"))
     raise NotImplementedError(f"{method} is scheduled for a later phase")
 
 

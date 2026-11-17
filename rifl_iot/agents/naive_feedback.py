@@ -1,8 +1,10 @@
 """B2: naive implicit feedback. Same LA/interface as B4, with rho=1, w=1 fixed
-(alpha_t = alpha), and credit applied to the tagged origin action (DESIGN.md §8)."""
+(alpha_t = alpha), and credit applied to the tagged origin action (DESIGN.md §8).
+Optional origin-misattribution simulation (rate_per_step=0 by default -> no change)."""
 import numpy as np
 
 from rifl_iot.agents.base import Agent, Decision
+from rifl_iot.agents.misattribution import resolve_origin
 from rifl_iot.agents.vanilla import call_record
 from rifl_iot.learning.automaton import ContextualAutomaton
 from rifl_iot.llm.parse import K, parse_decision
@@ -18,7 +20,7 @@ def ctx_name(llm_context):
 class NaiveFeedbackAgent(Agent):
     name = "B2_naive"
 
-    def __init__(self, llm, gen, system_prompt, seed, la_cfg):
+    def __init__(self, llm, gen, system_prompt, seed, la_cfg, misattribution_cfg=None):
         self.llm, self.gen, self.system_prompt = llm, gen, system_prompt
         self.rng = np.random.default_rng(np.random.SeedSequence([int(seed), 999]))
         self.alpha = float(la_cfg["alpha"])
@@ -31,6 +33,9 @@ class NaiveFeedbackAgent(Agent):
             K, variant=la_cfg.get("variant", "LR_I"), omega=float(la_cfg.get("omega", 0.5)),
             p_min=float(la_cfg.get("p_min", 0.01)), **extra)
         self.history = {}  # origin_t -> (context_name, action)
+        m = misattribution_cfg or {}
+        self.misattr_rate = float(m.get("rate_per_step", 0.0))
+        self.misattr_rng = np.random.default_rng(np.random.SeedSequence([int(seed), 555]))
 
     def act(self, obs, t):
         msgs = vanilla_messages(obs.features, self.system_prompt)
@@ -49,11 +54,14 @@ class NaiveFeedbackAgent(Agent):
             origin = e["origin_t"]
             rec = {"arrival_t": t, "origin_t": origin, "used": False}
             if origin is not None and origin in self.history:
-                cname, a = self.history.pop(origin)
+                true_delta = e["arrival_t"] - origin
+                resolved = resolve_origin(origin, true_delta, self.history, self.misattr_rate, self.misattr_rng)
+                cname, a = self.history.pop(resolved)
                 beta = float(np.clip(e["y_A"], 0.0, 1.0))
                 self.ca.get(cname).update(a, beta, self.alpha)
                 rec.update({"used": True, "rho": 1.0, "w": 1.0, "alpha_t": self.alpha,
-                           "beta": beta, "context": cname, "action": a})
+                           "beta": beta, "context": cname, "action": a,
+                           "origin_true": origin, "origin_resolved": resolved})
             recs.append(rec)
         return recs
 

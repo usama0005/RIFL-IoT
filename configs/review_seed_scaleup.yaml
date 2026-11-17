@@ -1,0 +1,28 @@
+# Decision 7: scale headline conditions to 50 seeds for proper statistical power.
+base: env_default.yaml
+experiment_id: review_seed_scaleup
+data:
+  source: uci_hydraulic
+  root: data/uci_hydraulic
+  calib_frac: 0.5
+  split_seed: 12345
+  stable_only: false
+llm:
+  backend: openai_compat
+  base_url: http://localhost:8000/v1
+  model: Qwen/Qwen2.5-7B-Instruct-AWQ
+  api_key_env: null
+  cache_path: runs/phase3_b2_uci/llm_cache.sqlite
+  gen: {temperature: 0.0, max_tokens: 256, seed: 0}
+methods: [B0_vanilla, B2_naive, B5_blind_mask, B4_rifl_iot]
+conditions:
+  clean:            {}
+  noise10:            {feedback.noise.eta: 0.1}
+  noise30:               {feedback.noise.eta: 0.3}
+  noise50:                  {feedback.noise.eta: 0.5}
+  correlated30:                 {feedback.noise.model: correlated, feedback.noise.eta: 0.3}
+  symflip100:                       {feedback.noise.model: symmetric_flip, feedback.noise.eta: 1.0}
+  conflict30:                           {feedback.conflict_q: 0.3}
+seeds: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49]
+output_root: runs
+results_root: results
