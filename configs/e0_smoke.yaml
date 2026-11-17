@@ -1,0 +1,27 @@
+base: env_default.yaml
+experiment_id: e0_smoke
+env:
+  schedules:
+    smoke: [[P1, 200]]
+run:
+  schedule: smoke
+data:
+  source: uci_hydraulic
+  root: data/uci_hydraulic
+  calib_frac: 0.5
+  split_seed: 12345
+  stable_only: false
+llm:
+  backend: openai_compat
+  base_url: http://localhost:8000/v1
+  model: Qwen/Qwen2.5-7B-Instruct-AWQ
+  api_key_env: null
+  cache_path: /tmp/e0_cache.sqlite
+  gen: {temperature: 0.0, max_tokens: 256, seed: 0}
+methods: [B0_vanilla, B2_naive, B5_blind_mask, B4_rifl_iot]
+conditions:
+  clean: {}
+  noise50: {feedback.noise.eta: 0.5}
+seeds: [0]
+output_root: runs
+results_root: results
